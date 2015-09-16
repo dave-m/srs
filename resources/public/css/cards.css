@@ -1,6 +1,10 @@
 .home-card {
     margin: 20px 0px;
 }
+.home-card:first-child {
+    margin-top: 0px;
+}
+
 .regatta-table table {
     width: 100%;
 }
