@@ -11,76 +11,54 @@
 (defn add-regatta! [name]
   (let [maxid (apply max (map :id @regattas))
         id (+ 1 (or maxid 0))]
-    (swap! regattas conj {:id id :name name})))
-
-(defn regattas-table []
-  (let [val (atom "")]
-    (fn []
-    [:section {:class "regatta-table section mdl-grid mdl-grid--no-spacing"}
-     [:h4 {:class "mdl-cell mdl-cell--8-col header"} "Current Regattas"]
-     [:div {:class "mdl-cell mdl-cell--4-col"}
-      [:div {:class "new mdl-textfield mdl-js-textfield mdl-textfield--floating-label"}
-       [:input {:class "mdl-textfield__input"
-                :type "text"
-                :id "newRegatta"
-                :value @val
-                :on-change #(reset! val (-> % .-target .-value))}]
-       [:label {:for "newRegatta" :class "mdl-textfield__label"} "New Regatta"]]
-      [:div {:class "new"}
-       [:button {:class "mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored mdl-shadow--4dp mdl-color--accent"
-                 :disabled (if (= 0 (count @val)) "true")
-                 :on-click #(when-let [r @val]
-                            (add-regatta! r)
-                            (reset! val ""))}
-        [:i {:class "material-icons"} "add"]]]]
-     [:table {:class "mdl-cell mdl-cell--12-col mdl-data-table mdl-js-data-table mdl-shadow--2dp"}
-      [:thead [:tr
-               [:th {:class "mdl-data-table__cell--non-numeric"} "Name"]
-               [:th {:class "mdl-data-table__cell--non-numeric"} "Races"]
-               [:th {:class "mdl-data-table__cell--non-numeric"} "Boats"]]]
-      [:tbody
-       (map (fn [r]
-                [:tr
-                 [:td {:class "mdl-data-table__cell--non-numeric"} (:name r)]
-                 [:td [:a {:class "mdl-button mdl-button--colored action"
-                           :href (str "#/races/" (:id r))} "View"]]
-                 [:td [:a {:class "mdl-button mdl-button--colored action"
-                           :href (str "#/boats/" (:id r))} "View"]] ])
-            @regattas)]]])
-  ))
+    (swap! regattas conj
+           {:id id
+            :name name
+            :details (str "Regatta " name)
+            :races []})))
 
 (defn regattas-card []
-  "Card displaying up to 5 of the current Regattas"
-  (let [regattas (take 5 @regattas)]
-    [:div {:class "home-card mdl-card mdl-shadow--2dp"}
-           [:div {:class "mdl-card__title"}
-            [:h2 {:class "mdl-card__title-text"} "Regattas"]]
-           [:div {:class "mdl-card__supporting-text"}
-            (str "All currently active Regattas: "
-                 (clojure.string/join ", " (map :name regattas))
-                 (if (= (count regattas) 5) "..."))]
-           [:div {:class "mdl-card__actions mdl-card--border"}
-            [:a {:class "mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"} "View"]]]))
+  (let [val (atom "")]
+    (fn []
+      [:section {:class "section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp"}
+       [:div {:class "mdk-card mdl-cell mdl-cell--12-col"}
+        [:h4 {:class "mdl-cell mdl-cell--12-col"} "Current Regattas"]
+        [:div {:class "mdl-card__supporting-text mdl-grid mdl-grid--no-spacing"}
+         (map (fn [r]
+                [:div {:class "section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone"}
+                 [:h5 (:name r)]
+                 [:p (str (:details r) ". See: ")
+                  [:a {:href (str "#/races/" (:id r))} "races"]
+                  (str ", ")
+                  [:a {:href (str "#/boats/" (:id r))} "boats"]
+                  (str ".")]])
+              @regattas)]
+        [:div {:class "mdl-card__actions"}
+         [:div {:class "mdl-cell mdl-cell--12-col"}
+          [:div {:class "mdl-cell mdl-cell--3-col"}
+           [:div {:class "mdl-textfield mdl-js-textfield mdl-textfield--floating-label"}
+            [:input {:class "mdl-textfield__input"
+                     :type "text"
+                     :id "newRegatta"
+                     :value @val
+                     :on-change #(reset! val (-> % .-target .-value))}]
+            [:label {:for "newRegatta" :class "mdl-textfield__label"} "New Regatta"]]]
+          [:div {:class "mdl-cell mdl-cell--2-col"}
+           [:button {:class "mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored mdl-shadow--4dp mdl-color--accent"
+                     :disabled (if (= 0 (count @val)) "true")
+                     :on-click #(when-let [r @val]
+                                  (add-regatta! r)
+                                  (reset! val ""))}
+            [:i {:class "material-icons"} "add"]]]]]]])
+    ))
 
-(defn boats-card []
-  [:div {:class "home-card mdl-card mdl-shadow--2dp"}
-   [:div {:class "mdl-card__title"}
-    [:h2 {:class "mdl-card__title-text"} "Boats"]]
-   [:div {:class "mdl-card__supporting-text"} "All current Boats"]
-   [:div {:class "mdl-card__actions mdl-card--border"}
-    [:a {:class "mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"} "View"]]])
-
-(defn races-card []
-  [:div {:class "home-card mdl-card mdl-shadow--2dp"}
-   [:div {:class "mdl-card__title"}
-    [:h2 {:class "mdl-card__title-text"} "Races"]]
-   [:div {:class "mdl-card__supporting-text"} "All currently active Races"]
-   [:div {:class "mdl-card__actions mdl-card--border"}
-    [:a {:class "mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"} "View"]]])
+(defn races-card [])
+(defn boats-card [])
 
 ;; -------------------------
 ;; Views
 
+(def current-view (atom regattas-card))
 (defn home-page []
   [:div {:class "mdl-layout mdl-js-layout mdl-layout--fixed-header"}
    [:header {:class "mdl-layout__header"}
@@ -88,16 +66,17 @@
      [:span {:class "mdl-layout-title"} "Sail Regatta Scoring"]
      [:span {:class "mdl-layout-spacer"}]
      [:nav {:class "mdl-navigation"}
-       [:a {:class "mdl-navigation__link" :href "#/regattas"} "Regatta"]
-       [:a {:class "mdl-navigation__link" :href "#/boats"} "Boats"]
-      [:a {:class "mdl-navigation__link" :href "#/races"} "Races"]]]]
+      [:a {:class "mdl-navigation__link"
+           :href "#/regattas"
+           :on-click #(swap! @current-view regattas-card)} "Regatta"]
+      [:a {:class "mdl-navigation__link"
+           :href "#/races"
+           :on-click #(swap! @current-view races-card)} "Races"]
+      [:a {:class "mdl-navigation__link" :href "#/boats" :on-click #(swap! @current-view boats-card)} "Boats"]
+      ]]]
    [:main {:class "mdl-layout__content page-content"}
     [:div {:class "mdl-grid"}
-     [:div {:class "mdl-cell mdl-cell--9-col mdl-cell--6-col-tablet"} [regattas-table]]
-     [:div {:class "mdl-cell mdl-cell--3-col mdl-cell--2-col-tablet"}
-      [:div [regattas-card] ]
-      [:div [races-card]]
-      [:div [boats-card]]]]]])
+     [:div {:class "mdl-cell mdl-cell--12-col mdl-cell--9-col-tablet"} [@current-view]]]]])
 
 
 (defonce init (do
