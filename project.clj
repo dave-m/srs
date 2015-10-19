@@ -9,6 +9,7 @@
                  [reagent "0.5.1"]
                  [reagent-forms "0.5.9"]
                  [reagent-utils "0.1.5"]
+                 [re-frame "0.5.0-SNAPSHOT"]
                  [ring "1.4.0"]
                  [ring/ring-defaults "0.1.5"]
                  [prone "0.8.2"]
