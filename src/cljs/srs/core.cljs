@@ -16,8 +16,12 @@
 ;; Initial
 (def initial-state
   {:regattas {1 {:id 1 :name "Nationals" :details "The Nationals"}
-              2 {:id 2 :name "Europeans" :details "The Europeans"}}
-   :current-view nil})
+              2 {:id 2 :name "Europeans" :details "The Europeans"
+                 :races {1 {:id 1
+                            :name "First Race"
+                            :laps 3
+                            :course "Trapezoid"
+                            :status "Not Started"}}}}})
 
 ;; Event Handlers
 (register-handler
@@ -35,8 +39,7 @@
      (assoc-in db [:regattas id] {:id id
                                 :name name
                                 :details (str "Regatta " name)
-                                :races []}))))
-
+                                :races {}}))))
 
 ;; Subscriptions
 
@@ -46,11 +49,12 @@
    (reaction (vals (:regattas @db)))))
 
 (register-sub
- :current-view
- (fn [db _]
-   (reaction (:current-view @db))))
+ :get-regatta
+ (fn [db [_ regatta-id]]
+   (reaction (get-in @db [:regattas (int regatta-id)]))))
 
 ;; Views
+
 (defn regattas-input []
   (let [val (atom "")
         stop #(do (reset! val ""))
@@ -97,39 +101,60 @@
            ^{:key (:id r)} [regatta-item r])]
         [regattas-input]]])))
 
-;; -------------------------
-;; Views
+(defn race-item [b]
+  (fn []
+    [:div {:class "section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone"}
+     [:h5 (:name b)]]))
 
-(defn page [content]
+(defn races-card [regatta-id]
+  (let [regatta (subscribe [:get-regatta regatta-id])
+        races (:races @regatta)]
+    (fn []
+        [:section {:class "section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp"}
+            [:div {:class "mdk-card mdl-cell mdl-cell--12-col"}
+             [:h4 {:class "mdl-cell mdl-cell--12-col"}
+              (clojure.string/join " " ["All Races for" (:name @regatta)])]
+            [:div {:class "mdl-card__supporting-text mdl-grid mdl-grid--no-spacing"}
+            (for [b races]
+                ^{:key (:id b)} [race-item b])]]])))
+
+(defn page [content & rest]
   [:div {:class "mdl-layout mdl-js-layout mdl-layout--fixed-header"}
-                [:header {:class "mdl-layout__header"}
-                [:div {:class "mdl-layout__header-row"}
-                [:span {:class "mdl-layout-title"} "Sail Regatta Scoring"]
-                [:span {:class "mdl-layout-spacer"}]
-                [:nav {:class "mdl-navigation"}
-                [:a {:class "mdl-navigation__link"
-                        :href "#/regattas"
-                        } "Regatta"]
-                [:a {:class "mdl-navigation__link"
-                        :href "#/races"
-                        } "Races"]
-                [:a {:class "mdl-navigation__link" :href "#/boats" } "Boats"]
-                ]]]
-                [:main {:class "mdl-layout__content page-content"}
-                [:div {:class "mdl-grid"}
-                [:div {:class "mdl-cell mdl-cell--12-col mdl-cell--9-col-tablet"} [content]]]]])
+   [:header {:class "mdl-layout__header"}
+    [:div {:class "mdl-layout__header-row"}
+    [:span {:class "mdl-layout-title"} "Sail Regatta Scoring"]
+    [:span {:class "mdl-layout-spacer"}]
+    [:nav {:class "mdl-navigation"}
+    [:a {:class "mdl-navigation__link"
+            :href "#/"
+            } "Regatta"]
+    [:a {:class "mdl-navigation__link"
+            :href "#/races"
+            } "Races"]
+    [:a {:class "mdl-navigation__link" :href "#/races" } "Races"]
+    ]]]
+    [:main {:class "mdl-layout__content page-content"}
+    [:div {:class "mdl-grid"}
+    [:div {:class "mdl-cell mdl-cell--12-col mdl-cell--9-col-tablet"} [(apply content rest)]]]]])
 
-(def current-view (atom regattas-card))
+
 (defn home-page []
-  [page @current-view])
+  [page regattas-card])
+(defn races-page [{regatta-id :regatta-id}]
+  [page races-card regatta-id])
+
+;; Page routing 
 (defn current-page []
-  [:div [(session/get :current-page)]])
+  [:div [(session/get :current-page) (session/get :params)]])
 
 ;; -------------------------
 ;; Routes
 (secretary/set-config! :prefix "#")
 (secretary/defroute "/" []
   (session/put! :current-page #'home-page))
+(secretary/defroute "/races/:regatta-id" {:as params}
+  (session/put! :current-page #'races-page)
+  (session/put! :params params))
 
 ;; -------------------------
 ;; History
