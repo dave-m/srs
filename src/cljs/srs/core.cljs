@@ -29,17 +29,25 @@
  (fn [db _]
    (merge db initial-state)))
 
-(defn next-regatta-id [regattas]
-  (+ 1 (or (apply max regattas) 0)))
+(defn next-id [seq]
+  (+ 1 (or (apply max seq) 0)))
 
 (register-handler
  :add-regatta
  (fn [db [_ name]]
-   (let [id (next-regatta-id (keys (:regattas db)))]
+   (let [id (next-id (keys (:regattas db)))]
      (assoc-in db [:regattas id] {:id id
                                 :name name
                                 :details (str "Regatta " name)
                                 :races {}}))))
+
+(register-handler
+ :add-race
+ (fn [db [_ regatta-id race]]
+   (let [id (next-id (keys (get-in db [:regattas (int regatta-id) :races])))
+         name (:name race)]
+     (assoc-in db [:regattas regatta-id :races]
+               (merge race {:id id})))))
 
 ;; Subscriptions
 
@@ -101,22 +109,29 @@
            ^{:key (:id r)} [regatta-item r])]
         [regattas-input]]])))
 
-(defn race-item [b]
+(defn race-item [race]
   (fn []
+    (println race)
     [:div {:class "section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone"}
-     [:h5 (:name b)]]))
+     [:h5 (:name race)]
+     [:ul
+      [:li (str "Laps: " (:laps race))]]
+      [:li (str "Course: " (:course race))]
+      [:li (str "Status: " (:status race))]]))
 
 (defn races-card [regatta-id]
   (let [regatta (subscribe [:get-regatta regatta-id])
-        races (:races @regatta)]
+        races (vals (:races @regatta))]
     (fn []
         [:section {:class "section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp"}
             [:div {:class "mdk-card mdl-cell mdl-cell--12-col"}
              [:h4 {:class "mdl-cell mdl-cell--12-col"}
-              (clojure.string/join " " ["All Races for" (:name @regatta)])]
+              "All Races for "
+              [:a {:href (str "#/")} (:name @regatta)]
+              " Regatta"]
             [:div {:class "mdl-card__supporting-text mdl-grid mdl-grid--no-spacing"}
-            (for [b races]
-                ^{:key (:id b)} [race-item b])]]])))
+            (for [r races]
+                ^{:key (:id r)} [race-item r])]]])))
 
 (defn page [content & rest]
   [:div {:class "mdl-layout mdl-js-layout mdl-layout--fixed-header"}
