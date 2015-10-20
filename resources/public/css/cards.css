@@ -22,4 +22,17 @@
     text-align: left;
     vertical-align: middle;
 }
+
+.races-add {
+    width: 128px;
+}
+
+.races-boats a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.race-item {
+    margin: 0px 5px 5px 0px;
+}
                
