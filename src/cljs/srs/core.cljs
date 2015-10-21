@@ -29,7 +29,10 @@
 ;; Event Handlers
 (register-handler
  :initialize (fn [db _]
-   (merge db initial-state)))
+               (merge db initial-state)
+               ; TODO: This is why material design doesn't look pretty
+               ; (js/setInterval (fn [] (.upgradeAllRegistered js/componentHandler)) 200)
+               ))
 
 (defn next-id [seq]
   (+ 1 (or (apply max seq) 0)))
@@ -70,51 +73,65 @@
    (reaction (get-in @db [:regattas (int regatta-id) :races (int race-id)]))))
 ;; Views
 
-(defn regattas-input []
+(defn regattas-input [{on-stop :on-stop}]
   (let [val (atom "")
-        stop #(do (reset! val ""))
+        stop #(do (reset! val "")
+                  (on-stop))
         save #(let [v (-> @val str clojure.string/trim)]
                               (if-not (empty? v)
                                 (dispatch [:add-regatta v]))
-                              (reset! val ""))]
+                              (reset! val "")
+                              (on-stop))]
     (fn [props]
-      [:div {:class "mdl-card__actions"}
-            [:div {:class "mdl-cell mdl-cell--12-col"}
-             [:div {:class "mdl-cell mdl-cell--3-col"}
-              [:div {:class "mdl-textfield mdl-js-textfield mdl-textfield--floating-label"}
-               [:input {:class "mdl-textfield__input"
-                        :type "text"
-                        :id "newRegatta"
-                        :value @val
-                        :on-change #(reset! val (-> % .-target .-value))}]
-               [:label {:for "newRegatta" :class "mdl-textfield__label"} "New Regatta"]]]
-             [:div {:class "mdl-cell mdl-cell--2-col"}
-              [:button {:class "mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored mdl-shadow--4dp mdl-color--accent"
-                        :disabled (if (= 0 (count @val)) "true")
-                        :on-click save}
-               [:i {:class "material-icons"} "add"]]]]])))
+      [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadown--2dp"}
+       [:div {:class "mdl-card__menu"}
+        [:button {:class "mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect mdl-button-mini-fab"
+                          :on-click stop
+                          :style {:float "right"}}
+                 [:id {:class "material-icons"} "cancel"]]]
+       [:div {:class "mdl-card__title"}
+        [:h6 "Create a new Regatta"]]
+       [:div {:class "mdl-card__supporting-text"}
+        [:div {:class "mdl-textfield mdl-js-textfield mdl-textfield--floating-label"}
+                   [:input {:class "mdl-textfield__input"
+                            :type "text"
+                            :id "newRegatta"
+                            :value @val
+                            :on-change #(reset! val (-> % .-target .-value))}]
+                   [:label {:for "newRegatta" :class "mdl-textfield__label"} "New Regatta"]]]
+       [:div {:class "mdl-card__actions"}
+        [:button {:class "card-button mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored mdl-shadow--4dp mdl-color--accent"
+                            :disabled (if (= 0 (count @val)) "true")
+                  :on-click save}
+         [:span {:style {:color "#fff"}} "Add"]]]])))
 
 (defn regatta-item [r]
   (fn []
-    [:div {:class "section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone"}
-     [:h5 (:name r)]
-     [:p (str (:details r) ". See: ")
-      [:a {:href (str "#/regattas/" (:id r) "/races")} "races"]
-      (str ", ")
-      [:a {:href (str "#/boats/" (:id r))} "boats"]
-      (str ".")]])
+    [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
+     [:div {:class "mdl-card__title mdl-card--border"}
+      [:h5 {:class "mdl-card__title-text"} (:name r)]]
+     [:div {:class "mdl-card__supporting-text"}
+      [:p (str (:details r))]]
+     [:div {:class "mdl-card__actions"}
+      [:button {:class "card-button mdl-button mdl-js-button mdl-button--raised mdl-button--colored"}
+       [:a {:href (str "#/regattas/" (:id r) "/races")} "races"]]]])
 
   )
 (defn regattas-card []
-  (let [reg (subscribe [:regattas])]
+  (let [reg (subscribe [:regattas])
+        adding (atom false)]
     (fn []
-      [:section {:class "section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp"}
-       [:div {:class "mdk-card mdl-cell mdl-cell--12-col"}
-        [:h4 {:class "mdl-cell mdl-cell--12-col"} "Current Regattas"]
-        [:div {:class "mdl-card__supporting-text mdl-grid mdl-grid--no-spacing"}
-         (for [r @reg]
-           ^{:key (:id r)} [regatta-item r])]
-        [regattas-input]]])))
+      [:section {:class "section--center mdl-shadow--2dp"}
+       [:div {:class "mdl-grid"}
+        [:h4 {:class "mdl-cell mdl-cell--10-col"} "Regattas"]
+        (when-not @adding
+          [:button {:class "mdl-cell--2-col mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised mdl-button--accent"
+                   :on-click #(reset! adding true)}
+          [:span "Add Regatta"]])
+        (when-not @adding
+          [:div {:class "mdl-grid mdl-cell mdl-cell--12-col"}
+          (for [r @reg] ^{:key (:id r)} [regatta-item r])])
+        (when @adding [regattas-input {:on-stop #(reset! adding false)}])]])))
 
 (defn add-race [{:keys [regatta-id on-stop]}]
   (let [name (atom "")
@@ -159,22 +176,23 @@
 
 (defn race-item [race]
   (fn []
-    [:div {:class "race-item mdl-card mdl-cell--4-col mdl-shadow--2dp"}
+    [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
      [:div {:class "mdl-card__title mdl-card--border"}
-      [:h5 {:class "mdl-card__titile-text"} (:name race)]]
+      [:h5 {:class "mdl-card__title-text"} (:name race)]]
      [:div {:class "mdl-card__supporting-text"}
       [:ul
        [:li (str "Laps: " (:laps race))]
        [:li (str "Course: " (:course race))]
        [:li (str "Status: " (:status race))]]]
      [:div {:class "mdl-card__actions mdl-card--border"}
-      [:button {:class "races-boats mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+      [:button {:class "card-button mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
                 :style {:float "right"}}
        [:a {:href (str "#/regattas/" (:regatta-id race) "/races/" (:id race) "/boats")}
         "Boats"]]]]))
 
 (defn races-card [regatta-id]
   (let [regatta (subscribe [:get-regatta regatta-id])
+        regatta-id (:id @regatta)
         races (vals (:races @regatta))
         adding (atom false)]
     (fn []
@@ -191,18 +209,18 @@
         ]
        (when-not @adding
          [:div {:class "mdl-grid"}
-          (for [r races] ^{:key (:id r)} [race-item (merge r {:regatta-id (:id @regatta)})])])])))
+          (for [r races] ^{:key (:id r)} [race-item (merge r {:regatta-id regatta-id})])])])))
 
 (defn boat-item [boat]
   (fn []
-    [:div {:class "boat-item mdl-card mdl-cell--4-col mdl-shadow--2dp"}
+    [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
      [:div {:class "mdl-card__title mdl-card--border"}
-      [:h5 {:class "mdl-card__titile-text"} (:name boat)]]
+      [:h5 {:class "mdl-card__title-text"} (:name boat)]]
      [:div {:class "mdl-card__supporting-text"}
       [:ul
        [:li (str "Name: " (:name boat))]
        [:li (str "Type: " (:type boat))]]]
-     [:div {:class "mdl-card__actions"}]]))
+     [:div {:class "card-button mdl-card__actions"}]]))
 
 (defn boats-card [regatta-id race-id]
   (let [race (subscribe [:get-race regatta-id race-id])
@@ -213,7 +231,8 @@
        [:div {:class "mdl-grid"}
              [:h4 {:class "mdl-cell mdl-cell--10-col"}
               "All Boats for the " (:name @race) " race"]
-        (when-not @adding [:button {:class "boats-add mdl-cell--2-col mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
+        (when-not @adding
+          [:button {:class "boats-add mdl-cell--2-col mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
                    :on-click #(reset! adding true)}
           [:span "Add Boat"]])
         ]
@@ -231,14 +250,9 @@
     [:a {:class "mdl-navigation__link"
             :href "#/"
             } "Regattas"]
-    [:a {:class "mdl-navigation__link"
-            :href "#/races"
-            } "Races"]
-    [:a {:class "mdl-navigation__link" :href "#/races" } "Races"]
     ]]]
     [:main {:class "mdl-layout__content page-content"}
-    [:div {:class "mdl-grid"}
-    [:div {:class "mdl-cell mdl-cell--12-col mdl-cell--9-col-tablet"} [(apply content rest)]]]]])
+     [(apply content rest)]]])
 
 
 (defn home-page []
@@ -281,7 +295,9 @@
   (reagent/render [current-page] (.getElementById js/document "app")))
 
 
-(defonce init (dispatch-sync [:initialize]))
+(defonce init
+  (dispatch-sync [:initialize])
+  )
 
 (defn init! []
   (hook-browser-navigation!)

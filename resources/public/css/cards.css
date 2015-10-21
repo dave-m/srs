@@ -27,12 +27,12 @@
     width: 128px;
 }
 
-.races-boats a {
+.card-button a {
     color: #fff;
     text-decoration: none;
 }
 
-.race-item {
+.card--margin {
     margin: 0px 5px 5px 0px;
 }
                
