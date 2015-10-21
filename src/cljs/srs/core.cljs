@@ -240,9 +240,11 @@
      [:td {:class "mdl-data-table__cell--non-numeric"} (:status race)]
      [:td {:class "mdl-data-table__cell--non-numeric"}
       [:a {:href (str "#/regattas/" (:regatta-id race) "/races/" (:id race) "/boats")}
-       [:i {:class "material-icons"} "list"]]]
+       [:i {:class "material-icons"
+            :style {:cursor "pointer"}} "list"]]]
      [:td {:class "mdl-data-table__cell--non-numeric"}
       [:i {:class "material-icons"
+           :style {:cursor "pointer"}
            :on-click #(dispatch [:delete-race (select-keys race [:regatta-id :id])])}
        "delete"]]]))
 
@@ -345,6 +347,7 @@
      [:td {:class "mdl-data-table__cell--non-numeric"} (:position boat)]
      [:td {:class "mdl-data-table__cell--non-numeric"}
       [:i {:class "material-icons"
+           :style {:cursor "pointer"}
            :on-click #(dispatch [:delete-boat (select-keys boat [:regatta-id :race-id :id])])}
        "delete"]]]))
 
