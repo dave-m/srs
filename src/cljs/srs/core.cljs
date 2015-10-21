@@ -6,7 +6,8 @@
                         path
                         register-sub
                         dispatch
-                        dispatch-sync
+
+                                   dispatch-sync
                                     subscribe]]
             [secretary.core :as secretary :include-macros true]
             [goog.events :as events]
@@ -64,6 +65,14 @@
                (merge race {:id id :status "Not Started"})))))
 
 (register-handler
+ :delete-race
+ (fn [db [_ {regatta-id :regatta-id
+             race-id :id}]]
+   (update-in db
+              [:regattas (int regatta-id) :races]
+              dissoc (int race-id))))
+
+(register-handler
  :add-boat
  (fn [db [_ {regatta-id :regatta-id
              race-id :race-id
@@ -75,6 +84,14 @@
      (assoc-in db [:regattas (int regatta-id) :races (int race-id) :boats id]
                (merge boat {:id id :position (int (:position boat))})))))
 
+(register-handler
+ :delete-boat
+ (fn [db [_ {regatta-id :regatta-id
+             race-id :race-id
+             boat-id :id}]]
+   (update-in db
+              [:regattas (int regatta-id) :races (int race-id) :boats]
+              dissoc (int boat-id))))
 ;; Subscriptions
 
 (register-sub
@@ -223,7 +240,11 @@
      [:td {:class "mdl-data-table__cell--non-numeric"} (:status race)]
      [:td {:class "mdl-data-table__cell--non-numeric"}
       [:a {:href (str "#/regattas/" (:regatta-id race) "/races/" (:id race) "/boats")}
-        "Boats"]]]))
+       [:i {:class "material-icons"} "list"]]]
+     [:td {:class "mdl-data-table__cell--non-numeric"}
+      [:i {:class "material-icons"
+           :on-click #(dispatch [:delete-race (select-keys race [:regatta-id :id])])}
+       "delete"]]]))
 
 (defn races-card [regatta-id]
   (let [regatta (subscribe [:get-regatta regatta-id])
@@ -256,7 +277,8 @@
              [:th {:class ""} "Laps"]
              [:th {:class "mdl-data-table__cell--non-numeric"} "Course"]
              [:th {:class "mdl-data-table__cell--non-numeric"} "Status"]
-             [:th {:class ""} ""]]]
+             [:th {:class "mdl-data-table__cell--non-numeric"} "Boats"]
+             [:th {:class "mdl-data-table__cell--non-numeric"} "Actions"]]]
            [:tbody
             (for [r races] ^{:key (:id r)} [race-row (merge r {:regatta-id regatta-id})])]]])
       ] )))
@@ -320,7 +342,11 @@
     [:tr
      [:td {:class "mdl-data-table__cell--non-numeric"} (:name boat)]
      [:td {:class "mdl-data-table__cell--non-numeric"} (:type boat)]
-     [:td {:class "mdl-data-table__cell--non-numeric"} (:position boat)]]))
+     [:td {:class "mdl-data-table__cell--non-numeric"} (:position boat)]
+     [:td {:class "mdl-data-table__cell--non-numeric"}
+      [:i {:class "material-icons"
+           :on-click #(dispatch [:delete-boat (select-keys boat [:regatta-id :race-id :id])])}
+       "delete"]]]))
 
 (defn boats-card [regatta-id race-id]
   (let [race (subscribe [:get-race regatta-id race-id])
@@ -348,9 +374,11 @@
             [:tr
              [:th {:class "mdl-data-table__cell--non-numeric"} "Name"]
              [:th {:class "mdl-data-table__cell--non-numeric"} "Type"]
-             [:th {:class "mdl-data-table__cell--non-numeric"} "Position"]]]
+             [:th {:class "mdl-data-table__cell--non-numeric"} "Position"]
+             [:th {:class "mdl-data-table__cell--non-numeric"} "Actions"]]]
            [:tbody
-            (for [b boats] ^{:key (:id b)} [boat-row b])]]])
+            (for [b boats] ^{:key (:id b)} [boat-row (merge b {:regatta-id regatta-id
+                                                               :race-id race-id})])]]])
        (when @adding
          [:div {:class "mdl-cell mdl-cell--12-col"}
           [add-boat-view {:regatta-id regatta-id
