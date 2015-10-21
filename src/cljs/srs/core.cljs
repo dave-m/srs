@@ -21,7 +21,10 @@
                             :name "First Race"
                             :laps 3
                             :course "Trapezoid"
-                            :status "Not Started"}}}}})
+                            :status "Not Started"
+                            :boats {1 {:id 1
+                                       :name "David"
+                                       :type "Laser Full"}}}}}}})
 
 ;; Event Handlers
 (register-handler
@@ -47,7 +50,7 @@
    (let [id (next-id (keys (get-in db [:regattas (int regatta-id) :races])))
          race (dissoc input-race :regatta-id)]
      (assoc-in db [:regattas (int regatta-id) :races id]
-               (merge race {:id id})))))
+               (merge race {:id id :status "Not Started"})))))
 
 ;; Subscriptions
 
@@ -61,6 +64,10 @@
  (fn [db [_ regatta-id]]
    (reaction (get-in @db [:regattas (int regatta-id)]))))
 
+(register-sub
+ :get-race
+ (fn [db [_ regatta-id race-id]]
+   (reaction (get-in @db [:regattas (int regatta-id) :races (int race-id)]))))
 ;; Views
 
 (defn regattas-input []
@@ -92,7 +99,7 @@
     [:div {:class "section__text mdl-cell mdl-cell--10-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone"}
      [:h5 (:name r)]
      [:p (str (:details r) ". See: ")
-      [:a {:href (str "#/races/" (:id r))} "races"]
+      [:a {:href (str "#/regattas/" (:id r) "/races")} "races"]
       (str ", ")
       [:a {:href (str "#/boats/" (:id r))} "boats"]
       (str ".")]])
@@ -109,25 +116,10 @@
            ^{:key (:id r)} [regatta-item r])]
         [regattas-input]]])))
 
-(defn race-item [race]
-  (fn []
-    [:div {:class "race-item mdl-card mdl-cell--4-col mdl-shadow--2dp"}
-     [:div {:class "mdl-card__title mdl-card--border"}
-      [:h5 {:class "mdl-card__titile-text"} (:name race)]]
-     [:div {:class "mdl-card__supporting-text"}
-      [:ul
-       [:li (str "Laps: " (:laps race))]
-       [:li (str "Course: " (:course race))]
-       [:li (str "Status: " (:status race))]]]
-     [:div {:class "mdl-card__actions mdl-card--border"}
-      [:button {:class "races-boats mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-                :style {:float "right"}}
-       [:a {:href (str "#/races/" (:id race) "/boats")}
-        "Boats"]]]]))
-
 (defn add-race [{:keys [regatta-id on-stop]}]
   (let [name (atom "")
         course (atom "")
+
         laps (atom "")]
     (fn []
       [:div {:class "mdl-cell mdl-cell-6"}
@@ -165,6 +157,22 @@
           [:span "Add"]]
         ]])))
 
+(defn race-item [race]
+  (fn []
+    [:div {:class "race-item mdl-card mdl-cell--4-col mdl-shadow--2dp"}
+     [:div {:class "mdl-card__title mdl-card--border"}
+      [:h5 {:class "mdl-card__titile-text"} (:name race)]]
+     [:div {:class "mdl-card__supporting-text"}
+      [:ul
+       [:li (str "Laps: " (:laps race))]
+       [:li (str "Course: " (:course race))]
+       [:li (str "Status: " (:status race))]]]
+     [:div {:class "mdl-card__actions mdl-card--border"}
+      [:button {:class "races-boats mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+                :style {:float "right"}}
+       [:a {:href (str "#/regattas/" (:regatta-id race) "/races/" (:id race) "/boats")}
+        "Boats"]]]]))
+
 (defn races-card [regatta-id]
   (let [regatta (subscribe [:get-regatta regatta-id])
         races (vals (:races @regatta))
@@ -173,9 +181,7 @@
       [:section {:class "section--center mdl-shadow--2dp"}
        [:div {:class "mdl-grid"}
              [:h4 {:class "mdl-cell mdl-cell--10-col"}
-              "All Races for "
-              [:a {:href (str "#/")} (:name @regatta)]
-              " Regatta"]
+              "All Races for " (:name @regatta) " Regatta"]
         (when-not @adding [:button {:class "races-add mdl-cell--2-col mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
                    :on-click #(reset! adding true)}
           [:span "Add Race"]])
@@ -185,8 +191,35 @@
         ]
        (when-not @adding
          [:div {:class "mdl-grid"}
-          (for [r races] ^{:key (:id r)} [race-item r])])])))
+          (for [r races] ^{:key (:id r)} [race-item (merge r {:regatta-id (:id @regatta)})])])])))
 
+(defn boat-item [boat]
+  (fn []
+    [:div {:class "boat-item mdl-card mdl-cell--4-col mdl-shadow--2dp"}
+     [:div {:class "mdl-card__title mdl-card--border"}
+      [:h5 {:class "mdl-card__titile-text"} (:name boat)]]
+     [:div {:class "mdl-card__supporting-text"}
+      [:ul
+       [:li (str "Name: " (:name boat))]
+       [:li (str "Type: " (:type boat))]]]
+     [:div {:class "mdl-card__actions"}]]))
+
+(defn boats-card [regatta-id race-id]
+  (let [race (subscribe [:get-race regatta-id race-id])
+        boats (vals (:boats @race))
+        adding (atom false)]
+    (fn []
+      [:section {:class "section--center mdl-shadow--2dp"}
+       [:div {:class "mdl-grid"}
+             [:h4 {:class "mdl-cell mdl-cell--10-col"}
+              "All Boats for the " (:name @race) " race"]
+        (when-not @adding [:button {:class "boats-add mdl-cell--2-col mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
+                   :on-click #(reset! adding true)}
+          [:span "Add Boat"]])
+        ]
+       (when-not @adding
+         [:div {:class "mdl-grid"}
+          (for [b boats] ^{:key (:id b)} [boat-item b])])])))
 
 (defn page [content & rest]
   [:div {:class "mdl-layout mdl-js-layout mdl-layout--fixed-header"}
@@ -197,7 +230,7 @@
     [:nav {:class "mdl-navigation"}
     [:a {:class "mdl-navigation__link"
             :href "#/"
-            } "Regatta"]
+            } "Regattas"]
     [:a {:class "mdl-navigation__link"
             :href "#/races"
             } "Races"]
@@ -212,6 +245,8 @@
   [page regattas-card])
 (defn races-page [{regatta-id :regatta-id}]
   [page races-card regatta-id])
+(defn boats-page [{regatta-id :regatta-id race-id :race-id}]
+  [page boats-card regatta-id race-id])
 
 ;; Page routing 
 (defn current-page []
@@ -222,10 +257,13 @@
 (secretary/set-config! :prefix "#")
 (secretary/defroute "/" []
   (session/put! :current-page #'home-page))
-(secretary/defroute "/races/:regatta-id" {:as params}
+(secretary/defroute "/regattas/:regatta-id/races" {:as params}
   (session/put! :current-page #'races-page)
   (session/put! :params params))
 
+(secretary/defroute "/regattas/:regatta-id/races/:race-id/boats" {:as params}
+  (session/put! :current-page #'boats-page)
+  (session/put! :params params))
 ;; -------------------------
 ;; History
 ;; must be called after routes have been defined
