@@ -29,10 +29,9 @@
 ;; Event Handlers
 (register-handler
  :initialize (fn [db _]
-               (merge db initial-state)
-               ; TODO: This is why material design doesn't look pretty
-               ; (js/setInterval (fn [] (.upgradeAllRegistered js/componentHandler)) 200)
-               ))
+               ; This is why material design doesn't look pretty
+               (js/setInterval (fn [] (.upgradeAllRegistered js/componentHandler)) 200)
+               (merge db initial-state)))
 
 (defn next-id [seq]
   (+ 1 (or (apply max seq) 0)))
@@ -166,7 +165,7 @@
                         :type "number"
                         :value @laps
                   :on-change #(reset! laps (-> % .-target .-value))}]]
-        [:button {:class "mdl-cell--2-col mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
+        [:button {:class "mdl-cell--2-col mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised mdl-button--accent"
                   :on-click #(dispatch [:add-race {:regatta-id (int regatta-id)
                                                     :name @name
                                                     :course @course
@@ -200,7 +199,7 @@
        [:div {:class "mdl-grid"}
              [:h4 {:class "mdl-cell mdl-cell--10-col"}
               "All Races for " (:name @regatta) " Regatta"]
-        (when-not @adding [:button {:class "races-add mdl-cell--2-col mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
+        (when-not @adding [:button {:class "races-add mdl-cell--2-col mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised mdl-button--accent"
                    :on-click #(reset! adding true)}
           [:span "Add Race"]])
         (when @adding
@@ -232,7 +231,7 @@
              [:h4 {:class "mdl-cell mdl-cell--10-col"}
               "All Boats for the " (:name @race) " race"]
         (when-not @adding
-          [:button {:class "boats-add mdl-cell--2-col mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
+          [:button {:class "boats-add mdl-cell--2-col mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised mdl-button--accent"
                    :on-click #(reset! adding true)}
           [:span "Add Boat"]])
         ]
