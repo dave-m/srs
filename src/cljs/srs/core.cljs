@@ -120,7 +120,7 @@
                               (reset! val "")
                               (on-stop))]
     (fn [props]
-      [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadown--2dp"}
+      [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
        [:div {:class "mdl-card__menu"}
         [:button {:class "mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect mdl-button-mini-fab"
                           :on-click stop
@@ -176,27 +176,30 @@
         course (atom "")
         laps (atom "")]
     (fn []
-      [:div {:class "mdl-cell mdl-cell-6"}
-       [:button {:class "mdl-button mdl-js-button mdl-button-mini-fab"
-                 :on-click on-stop
-                 :style {:float "right"}}
-        [:i {:class "material-icons"} "cancel"]]
-       [:div {:class "mdl-grid"}
-        [:div {:class "mdl-cell--10-col mdl-textfield mdl-js-textfield"}
+      [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
+       [:div {:class "mdl-card__menu"}
+        [:button {:class "mdl-button mdl-js-button mdl-button-mini-fab"
+                          :on-click on-stop
+                          :style {:float "right"}}
+                 [:i {:class "material-icons"} "cancel"]]]
+       [:div {:class "mdl-card__title"}
+        [:h6 "Create a new Race"]]
+       [:div {:class "mdl-card__supporting-text"}
+        [:div {:class "mdl-textfield mdl-js-textfield mdl-textfield--floating-label"}
          [:label {:class "mdl-textfield__label" :for "addRaceName"} "Race Name"]
          [:input {:class "mdl-textfield__input"
                   :id "addRaceName"
                         :type "text"
                         :value @name
                    :on-change #(reset! name (-> % .-target .-value))}]]
-        [:div {:class "mdl-cell--10-col mdl-textfield mdl-js-textfield"}
+        [:div {:class "mdl-textfield mdl-js-textfield mdl-textfield--floating-label"}
          [:label {:class "mdl-textfield__label" :for "addRaceCourse"} "Course"]
          [:input {:class "mdl-textfield__input"
                   :id "addRaceCourse"
                         :type "text"
                         :value @course
                   :on-change #(reset! course (-> % .-target .-value))}]]
-        [:div {:class "mdl-cell--10-col mdl-textfield mdl-js-textfield"}
+        [:div {:class "mdl-textfield mdl-js-textfield mdl-textfield--floating-label"}
          [:input {:class "mdl-textfield__input"
                   :id "addRaceLaps"
                   :type "number"
@@ -205,12 +208,13 @@
                   :on-change #(reset! laps (-> % .-target .-value))}]
          [:label {:class "mdl-textfield__label" :for "addRaceLaps"} "Laps"]
          [:span {:class "mdl-textfield__error"} "Whole numbers only"]]
-        [:button {:class "mdl-cell--2-col mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised mdl-button--accent"
-                  :on-click #(dispatch [:add-race {:regatta-id (int regatta-id)
-                                                    :name @name
-                                                    :course @course
-                                                    :laps @laps}])}
-          [:span "Add"]]
+        [:div {:class "mdl-card__actions"}
+         [:button {:class "mdl-cell--2-col mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised mdl-button--accent"
+                           :on-click #(dispatch [:add-race {:regatta-id (int regatta-id)
+                                                            :name @name
+                                                            :course @course
+                                                            :laps @laps}])}
+                  [:span "Add"]]]
         ]])))
 
 (defn race-item [race]
