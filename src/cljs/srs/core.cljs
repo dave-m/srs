@@ -144,17 +144,15 @@
 
 (defn regatta-item [r]
   (fn []
-    [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
+    [:div {:class "regatta-item-card card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
      [:div {:class "mdl-card__title mdl-card--border"}
       [:h5 {:class "mdl-card__title-text"} (:name r)]]
      [:div {:class "mdl-card__supporting-text"}
       [:p (str (:details r))]]
      [:div {:class "mdl-card__actions"}
-      (if (> (count (vals (:races r))) 0)
-        [:button {:class "card-button mdl-button mdl-js-button mdl-button--raised mdl-button--colored"}
-                [:a {:href (str "#/regattas/" (:id r) "/races")} "races"]])]])
+      [:button {:class "card-button mdl-button mdl-js-button mdl-button--raised mdl-button--colored"}
+                [:a {:href (str "#/regattas/" (:id r) "/races")} "races"]]]]))
 
-  )
 (defn regattas-card []
   (let [reg (subscribe [:regattas])
         adding (atom false)]
@@ -217,7 +215,7 @@
 
 (defn race-item [race]
   (fn []
-    [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
+    [:div {:class "race-item-card card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
      [:div {:class "mdl-card__title mdl-card--border"}
       [:h5 {:class "mdl-card__title-text"} (:name race)]]
      [:div {:class "mdl-card__supporting-text"}
@@ -288,7 +286,7 @@
 ;; Boat View
 (defn boat-item [boat]
   (fn []
-    [:div {:class "card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
+    [:div {:class "boat-item-card card--margin mdl-card mdl-cell--4-col mdl-shadow--2dp"}
      [:div {:class "mdl-card__title mdl-card--border"}
       [:h5 {:class "mdl-card__title-text"} (:name boat)]]
      [:div {:class "mdl-card__supporting-text"}
