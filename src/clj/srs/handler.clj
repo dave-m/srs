@@ -26,12 +26,3 @@
        [:b "lein figwheel"]
        " in order to start the compiler"]]
      (include-js "js/app.js")]]))
-
-(defroutes routes
-  (GET "/" [] home-page)
-  (resources "/")
-  (not-found "Not Found"))
-
-(def app
-  (let [handler (wrap-defaults #'routes site-defaults)]
-    (if (env :dev) (-> handler wrap-exceptions wrap-reload) handler)))

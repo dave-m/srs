@@ -1,5 +1,5 @@
 (ns srs.server
-  (:require [srs.handler :refer [app]]
+  (:require [srs.routes :refer [app]]
             [environ.core :refer [env]]
             [ring.adapter.jetty :refer [run-jetty]])
   (:gen-class))
